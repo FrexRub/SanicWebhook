@@ -33,21 +33,14 @@ def upgrade() -> None:
     bind = op.get_bind()
     session = orm.Session(bind=bind)
 
-    password_for_user1: str = create_hash_password("1qaz!QAZ").decode()
-    user1: User = User(
-        full_name="Admin1",
-        email="admin1@lib.ru",
-        hashed_password=password_for_user1,
+    password_for_user: str = create_hash_password("1qaz!QAZ").decode()
+    user: User = User(
+        full_name="Sergey Petrov",
+        email="admin@corp.com",
+        hashed_password=password_for_user,
         is_superuser=True,
     )
-    password_for_user2: str = create_hash_password("2wsx@WSX").decode()
-    user2: User = User(
-        full_name="Sergey Petrov",
-        email="petrov@mail.ru",
-        hashed_password=password_for_user2,
-        is_superuser=False,
-    )
-    session.add_all([user1, user2])
+    session.add(user)
     session.commit()
 
 
