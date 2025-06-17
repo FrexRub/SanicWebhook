@@ -9,7 +9,7 @@ from fastapi.security import (
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.database import get_async_session
-from src.core.jwt_utils import decode_jwt
+from src.utils.jwt_utils import decode_jwt
 from src.users.crud import get_user_by_id
 from src.users.models import User
 
