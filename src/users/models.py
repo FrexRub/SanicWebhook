@@ -5,9 +5,7 @@ from sqlalchemy import Boolean, DateTime, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.core.database import Base
-
-if TYPE_CHECKING:
-    from src.payments.models import Score, Payment
+from src.payments.models import Score, Payment
 
 
 class User(Base):

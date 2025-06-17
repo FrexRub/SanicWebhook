@@ -10,6 +10,7 @@ from src.core.database import DatabaseConnection
 
 app = Sanic("WebhookApp")
 Extend(app)
+
 app.blueprint(router_user)
 app.update_config(ConnectionsConfig)
 
