@@ -4,6 +4,7 @@ from pathlib import Path
 from pydantic import BaseModel
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+
 BASE_DIR = Path(__file__).parent.parent.parent
 
 COOKIE_NAME = "bonds_score"
@@ -30,6 +31,15 @@ class SettingConn(BaseSettings):
 
 
 setting_conn = SettingConn()
+
+
+class ConnectionsConfig:
+    DB_DRIVER = "postgresql+asyncpg"
+    DB_USER = setting_conn.postgres_user
+    DB_PASSWORD = setting_conn.postgres_password
+    DB_HOST = setting_conn.postgres_host
+    DB_PORT = setting_conn.postgres_port
+    DB_NAME = setting_conn.postgres_db
 
 
 class DbSetting(BaseSettings):
