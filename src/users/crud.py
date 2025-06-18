@@ -6,6 +6,8 @@ from sqlalchemy.engine import Result
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.utils.jwt_utils import create_hash_password
+from src.utils.create_account_number import bank_account
 from src.core.config import configure_logging
 from src.core.exceptions import (
     UniqueViolationError,
@@ -14,6 +16,7 @@ from src.core.exceptions import (
     ErrorInData,
 )
 from src.users.models import User
+from src.payments.models import Score
 from src.users.schemas import (
     UserCreateSchemas,
     UserUpdateSchemas,
@@ -49,10 +52,15 @@ async def find_user_by_email(session: AsyncSession, email: str) -> Optional[User
 
 
 async def create_user(session: AsyncSession, user_data: UserCreateSchemas) -> User:
-    logger.info(
-        "Start create user by name %s with email %s"
-        % (user_data.username, user_data.email)
-    )
+    """
+    :param session: сессия
+    :type session: AsyncSession
+    :param user_data: данные нового пользователя
+    :type user_data: UserCreateSchemas
+    :rtype: User
+    :return: возвращает нового пользователя
+    """
+    logger.info("Start create user with email %s" % user_data.email)
     result: Optional[User] = await find_user_by_email(
         session=session, email=user_data.email
     )
@@ -63,13 +71,18 @@ async def create_user(session: AsyncSession, user_data: UserCreateSchemas) -> Us
         new_user: User = User(**user_data.model_dump())
     except ValueError as exc:
         raise ErrorInData(exc)
+    else:
+        new_user_hashed_password = await create_hash_password(new_user.hashed_password)
+        new_user.hashed_password = new_user_hashed_password.decode()
+        session.add(new_user)
 
-    session.add(new_user)
-    await session.commit()
-    logger.info(
-        "User by name %s  with email %s created" % (user_data.username, user_data.email)
-    )
-    return new_user
+        new_account_number = await bank_account(session=session)
+        new_score: Score = Score(account_number=new_account_number, user=new_user)
+        session.add(new_score)
+
+        await session.commit()
+        logger.info("User with email %s created" % user_data.email)
+        return new_user
 
 
 async def get_users(session: AsyncSession) -> list[User]:

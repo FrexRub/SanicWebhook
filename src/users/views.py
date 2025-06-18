@@ -1,5 +1,5 @@
 from sanic import Blueprint
-from sanic.response import json, HTTPResponse
+from sanic.response import json, text
 from sanic.exceptions import SanicException
 from sanic_ext import openapi
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.users.schemas import LoginSchemas
 from src.users.models import User
-from src.users.crud import get_user_from_db
+from src.users.crud import get_user_from_db, create_user
 from src.utils.jwt_utils import validate_password, create_jwt
 from src.core.config import COOKIE_NAME
 from src.core.exceptions import (
@@ -20,7 +20,7 @@ from src.users.schemas import (
     UserCreateSchemas,
     UserUpdateSchemas,
     UserUpdatePartialSchemas,
-    AuthUserSchemas,
+    UserCreateSchemasIn,
 )
 
 
@@ -31,10 +31,17 @@ router = Blueprint("user", url_prefix="/user")
 @openapi.definition(
     body={"application/json": LoginSchemas.schema()},
     response={
-        200: {"description": "Успешный вход", "content": {"application/json": {"example": {"status": "success", "token": "abc123"}}}},
-        401: {"description": "Неверные данные"}
+        200: {
+            "description": "Успешный вход",
+            "content": {
+                "application/json": {
+                    "example": {"access_token": "abc123", "token_type": "bearer"}
+                }
+            },
+        },
+        401: {"description": "Неверные данные"},
     },
-    tag="Auth"
+    tag="User",
 )
 async def login(request, db_session: AsyncSession):
     data_login = LoginSchemas(**request.json)
@@ -50,7 +57,9 @@ async def login(request, db_session: AsyncSession):
         password=data_login.password, hashed_password=user.hashed_password
     ):
         access_token: str = await create_jwt(str(user.id))
-        response = json({"access_token": access_token, "token_type": "bearer"}, status=200)
+        response = json(
+            {"access_token": access_token, "token_type": "bearer"}, status=200
+        )
 
         response.cookies.add_cookie(
             key=COOKIE_NAME,
@@ -66,3 +75,43 @@ async def login(request, db_session: AsyncSession):
         )
 
 
+@router.post("/create")
+@openapi.definition(
+    body={"application/json": UserCreateSchemasIn.schema()},
+    response={
+        201: {
+            "description": "Успешное создание пользователя",
+            "content": {"application/json": {"example": {"status": "Ok"}}},
+        },
+        401: {"description": "Неверные данные"},
+    },
+    tag="User",
+)
+async def user_create(
+    request,
+    db_session: AsyncSession,
+    # user: User = Depends(current_superuser_user),
+):
+    try:
+        new_user = UserCreateSchemas(
+            full_name=request.json["username"],
+            email=request.json["email"],
+            hashed_password=request.json["password"],
+        )
+        user: User = await create_user(session=db_session, user_data=new_user)
+    except EmailInUse:
+        return json(
+            status=400,
+            body="The email address is already in use",
+        )
+
+    except (ErrorInData, ValueError) as exp:
+        return json(
+            status=400,
+            body=f"{exp}",
+        )
+
+    return json(
+        {"id": user.id, "full_name": user.full_name, "email": user.email},
+        status=201,
+    )
