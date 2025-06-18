@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.users.schemas import LoginSchemas
 from src.users.models import User
-from src.users.crud import get_user_from_db, create_user, update_user_db
+from src.users.crud import get_user_from_db, create_user, update_user_db, delete_user_db
 from src.utils.jwt_utils import validate_password, create_jwt
 from src.core.config import COOKIE_NAME
 from src.core.exceptions import (
@@ -43,7 +43,7 @@ router = Blueprint("user", url_prefix="/user")
     },
     tag="User",
 )
-async def login(request: Request, db_session: AsyncSession):
+async def login(request: Request, db_session: AsyncSession) -> HTTPResponse:
     """
     Обрабатывает вход пользователя в систему.
     """
@@ -102,7 +102,7 @@ async def user_create(
     request: Request,
     db_session: AsyncSession,
     # user: User = Depends(current_superuser_user),
-):
+) -> HTTPResponse:
     """
     Создание нового пользователя системы.
     """
@@ -177,7 +177,7 @@ async def update_user(
     id_user: int,
     db_session: AsyncSession,
     # session: AsyncSession = Depends(get_async_session),
-):
+) -> HTTPResponse:
     """
     Полное изменение данных пользователя.
     """
@@ -232,7 +232,7 @@ async def update_user_partial(
     id_user: int,
     db_session: AsyncSession,
     # session: AsyncSession = Depends(get_async_session),
-):
+) -> HTTPResponse:
     """
     Частичное изменение данных пользователя.
     """
@@ -263,3 +263,34 @@ async def update_user_partial(
             },
             status=200,
         )
+
+
+@router.delete("/<id_user:int>/")
+@openapi.definition(
+    response={
+        204: {
+            "description": "Успешное удаление пользователя",
+            "content": {"application/json": {"example": {"result": "Ok"}}},
+        },
+        400: {"description": "Пользователь не найден"},
+    },
+    tag="User",
+)
+async def delete_user(
+    request: Request,
+    id_user: int,
+    db_session: AsyncSession,
+    # super_user: User = Depends(current_superuser_user),
+) -> HTTPResponse:
+    try:
+        await delete_user_db(
+            session=db_session,
+            id_user=id_user,
+        )
+    except NotFindUser:
+        return json(
+            status=400,
+            body=f"User with id {id_user} not found!",
+        )
+    else:
+        return json({"result": "Ok"}, status=204)

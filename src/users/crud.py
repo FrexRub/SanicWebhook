@@ -117,7 +117,10 @@ async def update_user_db(
     return user
 
 
-async def delete_user_db(session: AsyncSession, user: User) -> None:
-    logger.info("Delete user by id %d" % user.id)
+async def delete_user_db(session: AsyncSession, id_user: int) -> None:
+    logger.info("Delete user by id %s" % id_user)
+    user: Optional[User] = await get_user_by_id(session=session, id_user=id_user)
+    if user is None:
+        raise NotFindUser(f"User with id {id_user} not found!")
     await session.delete(user)
     await session.commit()
