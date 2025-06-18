@@ -95,11 +95,16 @@ async def get_users(session: AsyncSession) -> list[User]:
 
 async def update_user_db(
     session: AsyncSession,
-    user: User,
+    id_user: int,
     user_update: Union[UserUpdateSchemas, UserUpdatePartialSchemas],
     partial: bool = False,
 ) -> User:
     logger.info("Start update user")
+
+    user: Optional[User] = await get_user_by_id(session=session, id_user=id_user)
+    if user is None:
+        raise NotFindUser(f"User with id {id_user} not found!")
+
     try:
         for name, value in user_update.model_dump(exclude_unset=partial).items():
             setattr(user, name, value)
