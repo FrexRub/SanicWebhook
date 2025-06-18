@@ -5,7 +5,6 @@ from sanic.response import json, HTTPResponse
 from sanic_ext import openapi
 from sqlalchemy.ext.asyncio import AsyncSession
 
-
 from src.users.schemas import LoginSchemas
 from src.users.models import User
 from src.users.crud import (
@@ -14,6 +13,7 @@ from src.users.crud import (
     update_user_db,
     delete_user_db,
     get_users,
+    get_user_info,
 )
 from src.utils.jwt_utils import validate_password, create_jwt
 from src.core.config import COOKIE_NAME
@@ -31,7 +31,6 @@ from src.users.schemas import (
     UserSuperSchemas,
     UserProtectedSchemas,
 )
-
 
 router = Blueprint("user", url_prefix="/user")
 
@@ -55,7 +54,7 @@ router = Blueprint("user", url_prefix="/user")
 )
 async def login(request: Request, db_session: AsyncSession) -> HTTPResponse:
     """
-    Обрабатывает вход пользователя в систему.
+    Обрабатывает вход пользователя в систему
     """
     data_login = LoginSchemas(**request.json)
     try:
@@ -117,7 +116,7 @@ async def user_create(
     user: UserSuperSchemas,
 ) -> HTTPResponse:
     """
-    Создание нового пользователя системы.
+    Создание нового пользователя системы
     """
     try:
         new_user = UserCreateSchemas(
@@ -157,7 +156,7 @@ async def user_create(
 )
 def logout(request: Request) -> HTTPResponse:
     """
-    Обрабатывает выход пользователя из системы.
+    Обрабатывает выход пользователя из системы
     """
     response = json({"result": "Ok"}, status=200)
     response.delete_cookie(COOKIE_NAME)
@@ -195,7 +194,7 @@ async def update_user(
     user: UserSuperSchemas,
 ) -> HTTPResponse:
     """
-    Полное изменение данных пользователя.
+    Полное изменение данных пользователя
     """
     try:
         data_user_update = UserUpdateSchemas(**request.json)
@@ -253,7 +252,7 @@ async def update_user_partial(
     user: UserSuperSchemas,
 ) -> HTTPResponse:
     """
-    Частичное изменение данных пользователя.
+    Частичное изменение данных пользователя
     """
     try:
         data_user_update = UserUpdatePartialSchemas(**request.json)
@@ -305,7 +304,7 @@ async def delete_user(
     user: UserSuperSchemas,
 ) -> HTTPResponse:
     """
-    Удаление пользователя.
+    Удаление пользователя
     """
     try:
         await delete_user_db(
@@ -359,7 +358,48 @@ async def get_list_users(
     user: UserSuperSchemas
 ) -> HTTPResponse:
     """
-    Получение списка пользователей с их счетами.
+    Получение списка пользователей с их счетами
     """
     list_users = await get_users(session=db_session)
     return json({"users": list_users})
+
+
+@router.get("/me")
+@openapi.definition(
+    response={
+        200: {
+            "description": "Успешный вывод информации о пользователе",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "full_name": "Uly Ivanova",
+                        "email": "ivanova@mail.com",
+                        "id": 5,
+                        "score": [
+                            {
+                                "account_number": "40817765056221374791",
+                                "balance": 0,
+                                "date_creation": "18-Jun-2025",
+                            }
+                        ],
+                    }
+                }
+            }
+        },
+        401: {"description": "User not authorized"},
+        403: {"description": "Access denied"},
+        500: {"description": "Server error"},
+    },
+    tag="User",
+)
+async def get_info_about_me(
+    request: Request,
+    db_session: AsyncSession,
+    user: UserProtectedSchemas
+):
+    """
+    Получение пользователем информации о себе
+    """
+    user_data = await get_user_info(session=db_session, id_user=user.id)
+
+    return json(user_data)

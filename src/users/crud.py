@@ -141,3 +141,22 @@ async def get_users(session: AsyncSession) -> list[dict[str, str]]:
         list_users.append(schema_user.model_dump())
 
     return list_users
+
+
+async def get_user_info(session: AsyncSession, id_user: int) -> dict[str, str]:
+    logger.info("Get info users by id %s", id_user)
+
+    stmt = select(User).filter(User.id == id_user).options(selectinload(User.scores))
+    result: Result = await session.execute(stmt)
+    user = result.scalars().one_or_none()
+
+    list_score = list()
+    for score in user.scores:  # type: Score
+        schema_score = ScoreBaseSchemas(**score.__dict__)
+        list_score.append(schema_score)
+
+    schema_user = OutUserSchemas(
+        id=user.id, full_name=user.full_name, email=user.email, score=list_score
+    )
+
+    return schema_user.model_dump()
