@@ -157,7 +157,7 @@ def logout(request: Request) -> HTTPResponse:
     body={"application/json": UserUpdateSchemas.schema()},
     response={
         200: {
-            "description": "Успешное создание пользователя",
+            "description": "Успешное изменение данных пользователя",
             "content": {
                 "application/json": {
                     "example": {
@@ -185,6 +185,64 @@ async def update_user(
         data_user_update = UserUpdateSchemas(**request.json)
         user_update = await update_user_db(
             session=db_session, id_user=id_user, user_update=data_user_update
+        )
+    except UniqueViolationError:
+        return json(
+            status=400,
+            body=f"Duplicate email",
+        )
+    except NotFindUser:
+        return json(
+            status=400,
+            body=f"User with id {id_user} not found!",
+        )
+    else:
+        return json(
+            {
+                "id": user_update.id,
+                "full_name": user_update.full_name,
+                "email": user_update.email,
+            },
+            status=200,
+        )
+
+
+@router.patch("/<id_user:int>/")
+@openapi.definition(
+    body={"application/json": UserUpdatePartialSchemas.schema()},
+    response={
+        200: {
+            "description": "Успешное изменение данных пользователя",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "id": 1,
+                        "full_name": "Name",
+                        "email": "example@example.com",
+                    }
+                }
+            },
+        },
+        401: {"description": "Неверные данные"},
+    },
+    tag="User",
+)
+async def update_user_partial(
+    request: Request,
+    id_user: int,
+    db_session: AsyncSession,
+    # session: AsyncSession = Depends(get_async_session),
+):
+    """
+    Частичное изменение данных пользователя.
+    """
+    try:
+        data_user_update = UserUpdatePartialSchemas(**request.json)
+        user_update = await update_user_db(
+            session=db_session,
+            id_user=id_user,
+            user_update=data_user_update,
+            partial=True,
         )
     except UniqueViolationError:
         return json(

@@ -19,7 +19,7 @@ class UserUpdateSchemas(UserBaseSchemas):
 
 
 class UserUpdatePartialSchemas(BaseModel):
-    username: Optional[str] = None
+    full_name: Optional[str] = None
     email: Optional[EmailStr] = None
 
 
