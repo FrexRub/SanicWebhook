@@ -1,5 +1,5 @@
 from sanic import Blueprint
-from sanic.response import json, text
+from sanic.response import json, text, HTTPResponse
 from sanic.exceptions import SanicException
 from sanic_ext import openapi
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -44,6 +44,9 @@ router = Blueprint("user", url_prefix="/user")
     tag="User",
 )
 async def login(request, db_session: AsyncSession):
+    """
+    Обрабатывает вход пользователя в систему.
+    """
     data_login = LoginSchemas(**request.json)
     try:
         user: User = await get_user_from_db(session=db_session, email=data_login.email)
@@ -81,7 +84,15 @@ async def login(request, db_session: AsyncSession):
     response={
         201: {
             "description": "Успешное создание пользователя",
-            "content": {"application/json": {"example": {"status": "Ok"}}},
+            "content": {
+                "application/json": {
+                    "example": {
+                        "id": 10,
+                        "full_name": "user full name",
+                        "email": "example@example.com",
+                    }
+                }
+            },
         },
         401: {"description": "Неверные данные"},
     },
@@ -92,6 +103,9 @@ async def user_create(
     db_session: AsyncSession,
     # user: User = Depends(current_superuser_user),
 ):
+    """
+    Создание нового пользователя системы.
+    """
     try:
         new_user = UserCreateSchemas(
             full_name=request.json["username"],
@@ -115,3 +129,24 @@ async def user_create(
         {"id": user.id, "full_name": user.full_name, "email": user.email},
         status=201,
     )
+
+
+@router.get("/logout")
+@openapi.definition(
+    response={
+        200: {
+            "description": "Успешный выход",
+            "content": {"application/json": {"example": {"result": "Ok"}}},
+        },
+        500: {"description": "Ошибка на стороне сервера"},
+    },
+    tag="User",
+)
+def logout(request) -> HTTPResponse:
+    """
+    Обрабатывает выход пользователя из системы.
+    """
+    response = json({"result": "Ok"}, status=200)
+    response.delete_cookie(COOKIE_NAME)
+
+    return response
