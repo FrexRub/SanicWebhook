@@ -1,7 +1,8 @@
 import logging
 from typing import Optional, Union
 
-from sqlalchemy import select
+from sqlalchemy import select, and_
+from sqlalchemy.orm import joinedload, selectinload
 from sqlalchemy.engine import Result
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -17,10 +18,12 @@ from src.core.exceptions import (
 )
 from src.users.models import User
 from src.payments.models import Score
+from src.payments.schemas import ScoreBaseSchemas
 from src.users.schemas import (
     UserCreateSchemas,
     UserUpdateSchemas,
     UserUpdatePartialSchemas,
+    OutUserSchemas,
 )
 
 configure_logging(logging.INFO)
@@ -85,14 +88,6 @@ async def create_user(session: AsyncSession, user_data: UserCreateSchemas) -> Us
         return new_user
 
 
-async def get_users(session: AsyncSession) -> list[User]:
-    logger.info("Get list users")
-    stmt = select(User).order_by(User.id)
-    result: Result = await session.execute(stmt)
-    users = result.scalars().all()
-    return list(users)
-
-
 async def update_user_db(
     session: AsyncSession,
     id_user: int,
@@ -124,3 +119,25 @@ async def delete_user_db(session: AsyncSession, id_user: int) -> None:
         raise NotFindUser(f"User with id {id_user} not found!")
     await session.delete(user)
     await session.commit()
+
+
+async def get_users(session: AsyncSession) -> list[dict[str, str]]:
+    logger.info("Get list users")
+
+    stmt = select(User).options(selectinload(User.scores)).order_by(User.id)
+    result: Result = await session.execute(stmt)
+    users = result.scalars().all()
+
+    list_users = list()
+    for user in users:  # type: User
+        list_score = list()
+        for score in user.scores:  # type: Score
+            schema_score = ScoreBaseSchemas(**score.__dict__)
+            list_score.append(schema_score)
+
+        schema_user = OutUserSchemas(
+            id=user.id, full_name=user.full_name, email=user.email, score=list_score
+        )
+        list_users.append(schema_user.model_dump())
+
+    return list_users

@@ -3,6 +3,8 @@ from typing import Optional
 
 from pydantic import BaseModel, EmailStr, ConfigDict, Field, field_validator
 
+from src.payments.schemas import ScoreBaseSchemas
+
 PATTERN_PASSWORD = (
     r'^(?=.*?[a-z])(?=.*?[A-Z])(?=.*?[0-9])(?=.*?[!"#\$%&\(\)\*\+,-\.\/:;<=>\?@[\]\^_'
     r"`\{\|}~])[a-zA-Z0-9!\$%&\(\)\*\+,-\.\/:;<=>\?@[\]\^_`\{\|}~]{8,}$"
@@ -43,15 +45,9 @@ class UserCreateSchemas(BaseModel):
 
 class OutUserSchemas(UserBaseSchemas):
     id: int
-
-    model_config = ConfigDict(from_attributes=True)
+    score: list[ScoreBaseSchemas]
 
 
 class LoginSchemas(BaseModel):
     email: str
     password: str
-
-
-class AuthUserSchemas(BaseModel):
-    access_token: str
-    token_type: str

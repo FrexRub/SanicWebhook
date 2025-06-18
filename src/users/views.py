@@ -1,3 +1,5 @@
+import json as js
+
 from sanic import Blueprint, Request
 from sanic.response import json, text, HTTPResponse
 from sanic.exceptions import SanicException
@@ -7,7 +9,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.users.schemas import LoginSchemas
 from src.users.models import User
-from src.users.crud import get_user_from_db, create_user, update_user_db, delete_user_db
+from src.users.crud import (
+    get_user_from_db,
+    create_user,
+    update_user_db,
+    delete_user_db,
+    get_users,
+)
 from src.utils.jwt_utils import validate_password, create_jwt
 from src.core.config import COOKIE_NAME
 from src.core.exceptions import (
@@ -282,6 +290,9 @@ async def delete_user(
     db_session: AsyncSession,
     # super_user: User = Depends(current_superuser_user),
 ) -> HTTPResponse:
+    """
+    Удаление пользователя.
+    """
     try:
         await delete_user_db(
             session=db_session,
@@ -294,3 +305,45 @@ async def delete_user(
         )
     else:
         return json({"result": "Ok"}, status=204)
+
+
+@router.get("/list")
+@openapi.definition(
+    response={
+        200: {
+            "description": "Успешный вывод списка пользователей",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "users": [
+                            {
+                                "full_name": "Uly Ivanova",
+                                "email": "ivanova@mail.com",
+                                "id": 5,
+                                "score": [
+                                    {
+                                        "account_number": "40817765056221374791",
+                                        "balance": 0,
+                                        "date_creation": "18-Jun-2025",
+                                    }
+                                ],
+                            }
+                        ]
+                    }
+                }
+            },
+        },
+        500: {"description": "Проблема на стороне сервера"},
+    },
+    tag="User",
+)
+async def get_list_users(
+    request: Request,
+    db_session: AsyncSession,
+    # user: User = Depends(current_superuser_user),
+) -> HTTPResponse:
+    """
+    Получение списка пользователей с их счетами.
+    """
+    list_users = await get_users(session=db_session)
+    return json({"users": list_users})
