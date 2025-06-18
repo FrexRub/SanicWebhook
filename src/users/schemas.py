@@ -11,6 +11,16 @@ PATTERN_PASSWORD = (
 )
 
 
+class UserProtectedSchemas(BaseModel):
+    id: int
+    full_name: str
+    email: EmailStr
+
+
+class UserSuperSchemas(UserProtectedSchemas):
+    is_superuser: bool
+
+
 class UserBaseSchemas(BaseModel):
     full_name: str = Field(min_length=2)
     email: EmailStr

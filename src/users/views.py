@@ -28,6 +28,8 @@ from src.users.schemas import (
     UserUpdateSchemas,
     UserUpdatePartialSchemas,
     UserCreateSchemasIn,
+    UserSuperSchemas,
+    UserProtectedSchemas,
 )
 
 
@@ -47,6 +49,7 @@ router = Blueprint("user", url_prefix="/user")
             },
         },
         401: {"description": "Неверные данные"},
+        500: {"description": "Server error"},
     },
     tag="User",
 )
@@ -101,14 +104,17 @@ async def login(request: Request, db_session: AsyncSession) -> HTTPResponse:
                 }
             },
         },
-        401: {"description": "Неверные данные"},
+        400: {"description": "Неверные данные"},
+        401: {"description": "User not authorized"},
+        403: {"description": "Access denied"},
+        500: {"description": "Server error"},
     },
     tag="User",
 )
 async def user_create(
     request: Request,
     db_session: AsyncSession,
-    # user: User = Depends(current_superuser_user),
+    user: UserSuperSchemas,
 ) -> HTTPResponse:
     """
     Создание нового пользователя системы.
@@ -145,7 +151,7 @@ async def user_create(
             "description": "Успешный выход",
             "content": {"application/json": {"example": {"result": "Ok"}}},
         },
-        500: {"description": "Ошибка на стороне сервера"},
+        500: {"description": "Server error"},
     },
     tag="User",
 )
@@ -175,7 +181,10 @@ def logout(request: Request) -> HTTPResponse:
                 }
             },
         },
-        401: {"description": "Неверные данные"},
+        400: {"description": "Неверные данные"},
+        401: {"description": "User not authorized"},
+        403: {"description": "Access denied"},
+        500: {"description": "Server error"},
     },
     tag="User",
 )
@@ -183,7 +192,7 @@ async def update_user(
     request: Request,
     id_user: int,
     db_session: AsyncSession,
-    # session: AsyncSession = Depends(get_async_session),
+    user: UserSuperSchemas,
 ) -> HTTPResponse:
     """
     Полное изменение данных пользователя.
@@ -230,7 +239,10 @@ async def update_user(
                 }
             },
         },
-        401: {"description": "Неверные данные"},
+        400: {"description": "Неверные данные"},
+        401: {"description": "User not authorized"},
+        403: {"description": "Access denied"},
+        500: {"description": "Server error"},
     },
     tag="User",
 )
@@ -238,7 +250,7 @@ async def update_user_partial(
     request: Request,
     id_user: int,
     db_session: AsyncSession,
-    # session: AsyncSession = Depends(get_async_session),
+    user: UserSuperSchemas,
 ) -> HTTPResponse:
     """
     Частичное изменение данных пользователя.
@@ -280,6 +292,9 @@ async def update_user_partial(
             "content": {"application/json": {"example": {"result": "Ok"}}},
         },
         400: {"description": "Пользователь не найден"},
+        401: {"description": "User not authorized"},
+        403: {"description": "Access denied"},
+        500: {"description": "Server error"},
     },
     tag="User",
 )
@@ -287,7 +302,7 @@ async def delete_user(
     request: Request,
     id_user: int,
     db_session: AsyncSession,
-    # super_user: User = Depends(current_superuser_user),
+    user: UserSuperSchemas,
 ) -> HTTPResponse:
     """
     Удаление пользователя.
@@ -332,14 +347,16 @@ async def delete_user(
                 }
             },
         },
-        500: {"description": "Проблема на стороне сервера"},
+        401: {"description": "User not authorized"},
+        403: {"description": "Access denied"},
+        500: {"description": "Server error"},
     },
     tag="User",
 )
 async def get_list_users(
     request: Request,
     db_session: AsyncSession,
-    # user: User = Depends(current_superuser_user),
+    user: UserSuperSchemas
 ) -> HTTPResponse:
     """
     Получение списка пользователей с их счетами.
