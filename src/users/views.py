@@ -1,8 +1,7 @@
 import json as js
 
 from sanic import Blueprint, Request
-from sanic.response import json, text, HTTPResponse
-from sanic.exceptions import SanicException
+from sanic.response import json, HTTPResponse
 from sanic_ext import openapi
 from sqlalchemy.ext.asyncio import AsyncSession
 
