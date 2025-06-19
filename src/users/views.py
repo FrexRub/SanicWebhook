@@ -1,5 +1,3 @@
-import json as js
-
 from sanic import Blueprint, Request
 from sanic.response import json, HTTPResponse
 from sanic_ext import openapi
@@ -13,7 +11,7 @@ from src.users.crud import (
     update_user_db,
     delete_user_db,
     get_users,
-    get_user_info,
+    get_user_by_id,
 )
 from src.utils.jwt_utils import validate_password, create_jwt
 from src.core.config import COOKIE_NAME
@@ -353,9 +351,7 @@ async def delete_user(
     tag="User",
 )
 async def get_list_users(
-    request: Request,
-    db_session: AsyncSession,
-    user: UserSuperSchemas
+    request: Request, db_session: AsyncSession, user: UserSuperSchemas
 ) -> HTTPResponse:
     """
     Получение списка пользователей с их счетами
@@ -384,7 +380,7 @@ async def get_list_users(
                         ],
                     }
                 }
-            }
+            },
         },
         401: {"description": "User not authorized"},
         403: {"description": "Access denied"},
@@ -393,13 +389,11 @@ async def get_list_users(
     tag="User",
 )
 async def get_info_about_me(
-    request: Request,
-    db_session: AsyncSession,
-    user: UserProtectedSchemas
+    request: Request, db_session: AsyncSession, user: UserProtectedSchemas
 ):
     """
     Получение пользователем информации о себе
     """
-    user_data = await get_user_info(session=db_session, id_user=user.id)
+    user_data = await get_user_by_id(session=db_session, id_user=user.id)
 
-    return json(user_data)
+    return json(UserProtectedSchemas(**user_data.__dict__).model_dump())
