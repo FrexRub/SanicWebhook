@@ -44,8 +44,8 @@ async def handle_sanic_exception(request, exception):
 
 
 @app.get("/")
-async def hello(request):
-    return html("<h2> Transaction handler</h2>")
+async def index(request):
+    return html("<h2> * Transaction handler *</h2>")
 
 
 @app.post("/webhook")

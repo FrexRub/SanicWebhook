@@ -1,0 +1,37 @@
+services:
+  db_tranz:
+    image: postgres
+    volumes:
+      - postgres_volume:/var/lib/postgresql/data/
+    ports:
+      - 5432:5432
+    restart: always
+    env_file:
+      - .env
+    networks:
+      - net
+
+  app:
+    build:
+      dockerfile: ./Dockerfile
+    command: python -m sanic src.main:app --host=0.0.0.0 --port=8000 --workers=2
+    expose:
+      - 8000
+    ports:
+      - 8000:8000
+    restart: always
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+    depends_on:
+      - db_tranz
+    networks:
+      - net
+
+volumes:
+  postgres_volume:
+
+networks:
+  net:
+    driver: bridge
