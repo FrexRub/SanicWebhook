@@ -1,11 +1,11 @@
 from datetime import datetime, timezone
-from typing import Optional, TYPE_CHECKING
+from typing import Optional
 
 from sqlalchemy import Boolean, DateTime, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.core.database import Base
-from src.payments.models import Score, Payment
+from src.payments.models import Payment, Score
 
 
 class User(Base):

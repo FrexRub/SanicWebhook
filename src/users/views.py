@@ -1,34 +1,35 @@
 from sanic import Blueprint, Request
-from sanic.response import json, HTTPResponse
+from sanic.exceptions import SanicException
+from sanic.response import HTTPResponse, json
 from sanic_ext import openapi
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.users.schemas import LoginSchemas
-from src.users.models import User
-from src.users.crud import (
-    get_user_from_db,
-    create_user,
-    update_user_db,
-    delete_user_db,
-    get_users,
-    get_user_by_id,
-)
-from src.utils.jwt_utils import validate_password, create_jwt
 from src.core.config import COOKIE_NAME
 from src.core.exceptions import (
-    UniqueViolationError,
-    NotFindUser,
     EmailInUse,
     ErrorInData,
+    NotFindUser,
+    UniqueViolationError,
 )
+from src.users.crud import (
+    create_user,
+    delete_user_db,
+    get_user_by_id,
+    get_user_from_db,
+    get_users,
+    update_user_db,
+)
+from src.users.models import User
 from src.users.schemas import (
+    LoginSchemas,
     UserCreateSchemas,
-    UserUpdateSchemas,
-    UserUpdatePartialSchemas,
     UserCreateSchemasIn,
-    UserSuperSchemas,
     UserProtectedSchemas,
+    UserSuperSchemas,
+    UserUpdatePartialSchemas,
+    UserUpdateSchemas,
 )
+from src.utils.jwt_utils import create_jwt, validate_password
 
 router = Blueprint("user", url_prefix="/user")
 
@@ -130,10 +131,7 @@ async def user_create(
         )
 
     except (ErrorInData, ValueError) as exp:
-        return json(
-            status=400,
-            body=f"{exp}",
-        )
+        raise SanicException(f"{exp}", status_code=400)
 
     return json(
         {"id": user.id, "full_name": user.full_name, "email": user.email},
@@ -202,13 +200,15 @@ async def update_user(
     except UniqueViolationError:
         return json(
             status=400,
-            body=f"Duplicate email",
+            body="Duplicate email",
         )
     except NotFindUser:
         return json(
             status=400,
             body=f"User with id {id_user} not found!",
         )
+    except (ErrorInData, ValueError) as exp:
+        raise SanicException(f"{exp}", status_code=400)
     else:
         return json(
             {
@@ -263,13 +263,15 @@ async def update_user_partial(
     except UniqueViolationError:
         return json(
             status=400,
-            body=f"Duplicate email",
+            body="Duplicate email",
         )
     except NotFindUser:
         return json(
             status=400,
             body=f"User with id {id_user} not found!",
         )
+    except (ErrorInData, ValueError) as exp:
+        raise SanicException(f"{exp}", status_code=400)
     else:
         return json(
             {

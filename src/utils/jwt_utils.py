@@ -1,5 +1,5 @@
-from datetime import datetime, timedelta, timezone
 import asyncio
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 import bcrypt
@@ -11,10 +11,6 @@ from src.core.config import setting, setting_conn
 async def create_hash_password(password: str) -> bytes:
     """
     Создание хеш пароля
-    :param password: пароль
-    :type password: str
-    :rtype: bytes
-    :return: хеш значение пароля
     """
     salt = bcrypt.gensalt()
     pwd_bytes: bytes = password.encode()
@@ -27,13 +23,7 @@ async def validate_password(
     hashed_password: str,
 ) -> bool:
     """
-    Проверка валидности пароля. Проверяет пароль с хеш-значением правильного пароля
-    :param password: переданный пароль
-    :type password: str
-    :param hashed_password: хеш-значение правильного пароля
-    :type hashed_password: str
-    :rtype: bool
-    :return: возвращает True, если пароль верный иначе - False
+    Проверка валидности пароля. Сверяет пароль с хеш-значением правильного пароля
     """
     await asyncio.sleep(0)
     return bcrypt.checkpw(
@@ -49,15 +39,6 @@ async def encode_jwt(
 ) -> str:
     """
      Создает jwt-токена по алгоритму RS256 (с использованием ассиметричных ключей)
-    :param payload: содержание jwt-токена
-    :type payload: dict
-    :param key: секретный ключ
-    :type key: str
-    :param algorithm: задается алгоритм
-    :type algorithm: str
-    :rtype: str
-    :return: возвращает jwt-токен
-
     """
     encoded = jwt.encode(payload, key, algorithm=algorithm)
     await asyncio.sleep(0)
@@ -70,15 +51,7 @@ async def decode_jwt(
     algorithm: str = setting.auth_jwt.algorithm,
 ):
     """
-    Раскодирует jwt-токен
-    :param token: jwt-токен
-    :type token: str | bytes
-    :param key: секретный ключ шифрования
-    :type key: str
-    :param algorithm: алгоритм шифрования
-    :type algorithm: str
-    :rtype: dict
-    :return: содержание токена (payload)
+    Раскодирует jwt-токен, возвращает содержание токена (payload)
     """
     decoded = jwt.decode(token, key, algorithms=[algorithm])
     await asyncio.sleep(0)
@@ -91,12 +64,6 @@ async def create_jwt(
 ) -> str:
     """
     Создание jwt-токен
-    :param user_id: id пользователя
-    :type user_id: str
-    :param expire_minutes: время экспирации токена
-    :type expire_minutes: Optional[int]
-    :rtype: str
-    :return: jwt-токен
     """
     payload = dict()
     payload["sub"] = user_id

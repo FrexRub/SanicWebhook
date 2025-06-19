@@ -1,36 +1,39 @@
 import logging
 from typing import Optional, Union
 
-from sqlalchemy import select, and_
-from sqlalchemy.orm import joinedload, selectinload
+from sqlalchemy import select
 from sqlalchemy.engine import Result
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
-from src.utils.jwt_utils import create_hash_password
-from src.utils.create_account_number import bank_account
 from src.core.config import configure_logging
 from src.core.exceptions import (
-    UniqueViolationError,
-    NotFindUser,
     EmailInUse,
     ErrorInData,
+    NotFindUser,
+    UniqueViolationError,
 )
-from src.users.models import User
 from src.payments.models import Score
 from src.payments.schemas import ScoreBaseSchemas
+from src.users.models import User
 from src.users.schemas import (
-    UserCreateSchemas,
-    UserUpdateSchemas,
-    UserUpdatePartialSchemas,
     OutUserSchemas,
+    UserCreateSchemas,
+    UserUpdatePartialSchemas,
+    UserUpdateSchemas,
 )
+from src.utils.create_account_number import bank_account
+from src.utils.jwt_utils import create_hash_password
 
 configure_logging(logging.INFO)
 logger = logging.getLogger(__name__)
 
 
 async def get_user_from_db(session: AsyncSession, email: str) -> User:
+    """
+    Поиск пользователя в БД по email (с вызовом исключения)
+    """
     logger.info("Start find user by username: %s" % email)
     stmt = select(User).where(User.email == email)
     res: Result = await session.execute(stmt)
@@ -43,11 +46,17 @@ async def get_user_from_db(session: AsyncSession, email: str) -> User:
 
 
 async def get_user_by_id(session: AsyncSession, id_user: int) -> Optional[User]:
+    """
+    Поиск пользователя в БД по id
+    """
     logger.info("User request by id %d" % id_user)
     return await session.get(User, id_user)
 
 
 async def find_user_by_email(session: AsyncSession, email: str) -> Optional[User]:
+    """
+    Поиск пользователя в БД по email
+    """
     logger.info("User find by email %s" % email)
     stmt = select(User).filter(User.email == email)
     result: Result = await session.execute(stmt)
@@ -56,12 +65,7 @@ async def find_user_by_email(session: AsyncSession, email: str) -> Optional[User
 
 async def create_user(session: AsyncSession, user_data: UserCreateSchemas) -> User:
     """
-    :param session: сессия
-    :type session: AsyncSession
-    :param user_data: данные нового пользователя
-    :type user_data: UserCreateSchemas
-    :rtype: User
-    :return: возвращает нового пользователя
+    Создание нового пользователя
     """
     logger.info("Start create user with email %s" % user_data.email)
     result: Optional[User] = await find_user_by_email(
@@ -94,6 +98,9 @@ async def update_user_db(
     user_update: Union[UserUpdateSchemas, UserUpdatePartialSchemas],
     partial: bool = False,
 ) -> User:
+    """
+    Обновление данных пользователя
+    """
     logger.info("Start update user")
 
     user: Optional[User] = await get_user_by_id(session=session, id_user=id_user)
@@ -109,10 +116,15 @@ async def update_user_db(
         raise UniqueViolationError(
             "Duplicate key value violates unique constraint users_email_key"
         )
+    except ValueError as exc:
+        raise ErrorInData(exc)
     return user
 
 
 async def delete_user_db(session: AsyncSession, id_user: int) -> None:
+    """
+    Удаление пользователя по id
+    """
     logger.info("Delete user by id %s" % id_user)
     user: Optional[User] = await get_user_by_id(session=session, id_user=id_user)
     if user is None:
@@ -122,6 +134,9 @@ async def delete_user_db(session: AsyncSession, id_user: int) -> None:
 
 
 async def get_users(session: AsyncSession) -> list[dict[str, str]]:
+    """
+    Возвращает список пользователей со счетами
+    """
     logger.info("Get list users")
 
     stmt = select(User).options(selectinload(User.scores)).order_by(User.id)
@@ -141,22 +156,3 @@ async def get_users(session: AsyncSession) -> list[dict[str, str]]:
         list_users.append(schema_user.model_dump())
 
     return list_users
-
-
-# async def get_user_info(session: AsyncSession, id_user: int) -> dict[str, str]:
-#     logger.info("Get info users by id %s", id_user)
-#
-#     stmt = select(User).filter(User.id == id_user).options(selectinload(User.scores))
-#     result: Result = await session.execute(stmt)
-#     user = result.scalars().one_or_none()
-#
-#     list_score = list()
-#     for score in user.scores:  # type: Score
-#         schema_score = ScoreBaseSchemas(**score.__dict__)
-#         list_score.append(schema_score)
-#
-#     schema_user = OutUserSchemas(
-#         id=user.id, full_name=user.full_name, email=user.email, score=list_score
-#     )
-#
-#     return schema_user.model_dump()

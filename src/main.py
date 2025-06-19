@@ -1,22 +1,20 @@
-from sanic import Sanic, html, json, Request
-from sanic_ext import Extend, openapi
+from sanic import Request, Sanic, html, json
 from sanic.exceptions import SanicException
+from sanic_ext import Extend, openapi
 from sqlalchemy.ext.asyncio import AsyncSession
-
-from src.users.views import router as router_user
-from src.payments.views import router as router_payments
 
 from src.core.config import ConnectionsConfig
 from src.core.database import DatabaseConnection
 from src.core.depends import current_superuser_user, current_user
-from src.users.schemas import UserSuperSchemas, UserProtectedSchemas
-from src.utils.processing import process_transaction
-from src.payments.schemas import TransactionInSchemas
 from src.core.exceptions import (
-    PaymentProcessed,
     ErrorInData,
+    PaymentProcessed,
 )
-
+from src.payments.schemas import TransactionInSchemas
+from src.payments.views import router as router_payments
+from src.users.schemas import UserProtectedSchemas, UserSuperSchemas
+from src.users.views import router as router_user
+from src.utils.processing import process_transaction
 
 app = Sanic("WebhookApp")
 Extend(app)
@@ -30,7 +28,7 @@ app.ext.add_dependency(UserProtectedSchemas, current_user)
 
 
 @app.before_server_start
-async def setup_db(application: Sanic, request) -> None:
+async def setup_db(application: Sanic, _) -> None:
     db_conn = DatabaseConnection(application.config)
     db_session: AsyncSession = db_conn.create_session()
 

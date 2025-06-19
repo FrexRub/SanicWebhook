@@ -2,14 +2,14 @@ from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
 from sqlalchemy import (
-    DateTime,
-    func,
-    ForeignKey,
-    UniqueConstraint,
-    Index,
-    UUID,
     NUMERIC,
+    UUID,
+    DateTime,
+    ForeignKey,
+    Index,
     String,
+    UniqueConstraint,
+    func,
     text,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship

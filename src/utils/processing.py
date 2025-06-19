@@ -1,23 +1,23 @@
-import uuid
-import hashlib
 import asyncio
-import logging
 import decimal
+import hashlib
+import logging
+import uuid
 
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_
+from sqlalchemy import and_, select
 from sqlalchemy.engine import Result
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.core.config import configure_logging, setting_conn
+from src.core.exceptions import (
+    ErrorInData,
+    PaymentProcessed,
+)
 from src.payments.models import Payment, Score
 from src.payments.schemas import (
     PaymentGenerateBaseSchemas,
     PaymentGenerateOutSchemas,
     TransactionInSchemas,
-)
-from src.core.config import setting_conn, configure_logging
-from src.core.exceptions import (
-    ErrorInData,
-    PaymentProcessed,
 )
 
 configure_logging(logging.INFO)
@@ -28,10 +28,7 @@ async def generate_payments(
     data_request: PaymentGenerateBaseSchemas,
 ) -> PaymentGenerateOutSchemas:
     """
-    :param data_request: реквизиты платежа для создания транзакции с подписью
-    :type data_request: PaymentGenerateBaseSchemas
-    :rtype: PaymentGenerateOutSchemas
-    :return: возвращает транзакцию с подписью
+    Генерация платежа по реквизитам (transaction_id генерируется системой)
     """
     if data_request.transaction_id:
         transaction_id = data_request.transaction_id
@@ -62,12 +59,7 @@ async def process_transaction(
     session: AsyncSession, data_request: TransactionInSchemas
 ) -> None:
     """
-    :param session: сессия БД
-    :type session: AsyncSession
-    :param data_request: транзакция на исполнение
-    :type data_request: TransactionInSchemas
-    :rtype: None
-    :return:
+    Обработка поступившего платежа
     """
     data: PaymentGenerateBaseSchemas = PaymentGenerateBaseSchemas(
         **data_request.model_dump()
@@ -112,7 +104,9 @@ async def process_transaction(
         )
 
     else:
-        if amount < 0 and (scores.balance < amount):
+        logger.info(f"float(amount) {float(amount)}  {float(amount) > 0}")
+        logger.info(f"scores.balance {scores.balance}  amount {abs(amount)} {scores.balance < abs(amount)}")
+        if float(amount) < 0 and (scores.balance < abs(amount)):
             raise PaymentProcessed("insufficient funds")
 
         async with session.begin_nested():

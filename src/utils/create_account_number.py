@@ -1,7 +1,7 @@
-import random
 import asyncio
+import random
 
-from sqlalchemy import select, exists
+from sqlalchemy import exists, select
 from sqlalchemy.engine import Result
 from sqlalchemy.ext.asyncio import AsyncSession
 

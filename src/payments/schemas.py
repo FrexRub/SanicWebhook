@@ -1,13 +1,13 @@
-from decimal import Decimal
 from datetime import datetime
+from decimal import Decimal
 from uuid import uuid4
 
 from pydantic import (
+    UUID4,
     BaseModel,
     ConfigDict,
     Field,
     field_serializer,
-    UUID4,
 )
 
 
@@ -22,7 +22,7 @@ class ScoreBaseSchemas(BaseModel):
 
     @field_serializer("balance")
     def serialize_balance(self, bal: Decimal, _info):
-        return float(bal)
+        return str(bal)
 
 
 class ScoreOutSchemas(ScoreBaseSchemas):
@@ -41,13 +41,17 @@ class PaymentBaseSchemas(BaseModel):
 
     @field_serializer("amount")
     def serialize_balance(self, amo: Decimal, _info):
-        return float(amo)
+        return str(amo)
 
 
 class PaymentOutSchemas(PaymentBaseSchemas):
     transaction_id: UUID4 = Field(default_factory=uuid4)
 
     model_config = ConfigDict(from_attributes=True)
+
+    @field_serializer("transaction_id")
+    def serialize_id(self, tra: UUID4, _info):
+        return str(tra)
 
 
 class PaymentGenerateBaseSchemas(BaseModel):
@@ -58,7 +62,7 @@ class PaymentGenerateBaseSchemas(BaseModel):
 
     @field_serializer("amount")
     def serialize_balance(self, amo: Decimal, _info):
-        return float(amo)
+        return str(amo)
 
 
 class PaymentGenerateOutSchemas(PaymentGenerateBaseSchemas):
@@ -74,4 +78,4 @@ class TransactionInSchemas(BaseModel):
 
     @field_serializer("amount")
     def serialize_balance(self, amo: Decimal, _info):
-        return float(amo)
+        return str(amo)

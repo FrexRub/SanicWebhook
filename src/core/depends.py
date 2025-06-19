@@ -1,19 +1,21 @@
-from typing import Annotated, Optional
+from typing import Optional
 
 import jwt
-from sqlalchemy.ext.asyncio import AsyncSession
 from sanic import Request
 from sanic.exceptions import SanicException
+from sqlalchemy.ext.asyncio import AsyncSession
 
-
-from src.utils.jwt_utils import decode_jwt
+from src.core.config import COOKIE_NAME
 from src.users.crud import get_user_by_id
 from src.users.models import User
-from src.users.schemas import UserSuperSchemas, UserProtectedSchemas
-from src.core.config import COOKIE_NAME
+from src.users.schemas import UserProtectedSchemas, UserSuperSchemas
+from src.utils.jwt_utils import decode_jwt
 
 
 async def validate_token(token: str, session: AsyncSession) -> Optional[User]:
+    """
+    Валидация токена и возвращение данных об авторизованном клиенте
+    """
     if token is None:
         return None
     try:
@@ -31,6 +33,9 @@ async def current_superuser_user(
     request: Request,
     db_session: AsyncSession,
 ) -> UserSuperSchemas:
+    """
+    Проверка авторизации пользователя и его принадлежность к администраторам
+    """
 
     token = request.cookies.get(COOKIE_NAME)
     user: Optional[User] = await validate_token(token=token, session=db_session)
@@ -48,7 +53,9 @@ async def current_user(
     request: Request,
     db_session: AsyncSession,
 ) -> UserProtectedSchemas:
-
+    """
+    Проверка авторизации пользователя
+    """
     token = request.cookies.get(COOKIE_NAME)
     user: Optional[User] = await validate_token(token=token, session=db_session)
 

@@ -3,10 +3,10 @@ from sanic.response import json
 from sanic_ext import openapi
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.payments.crud import list_scopes, list_payments
-from src.utils.processing import generate_payments
+from src.payments.crud import list_payments, list_scopes
 from src.payments.schemas import PaymentGenerateBaseSchemas, PaymentGenerateOutSchemas
 from src.users.schemas import UserProtectedSchemas
+from src.utils.processing import generate_payments
 
 router = Blueprint("payments", url_prefix="/payments")
 
@@ -49,6 +49,30 @@ async def get_list_scores(
 
 
 @router.get("/payments")
+@openapi.definition(
+    response={
+        200: {
+            "description": "Успешный вывод информации о платежах",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "payments": [
+                            {
+                                "amount": "10.00",
+                                "date_creation": "19-Jun-2025",
+                                "transaction_id": "f151f514-a6d9-489c-857b-12bde5779894"
+                            }
+                        ],
+                    }
+                }
+            },
+        },
+        401: {"description": "User not authorized"},
+        403: {"description": "Access denied"},
+        500: {"description": "Server error"},
+    },
+    tag="Payments",
+)
 async def get_list_payments_for_user(
     request: Request, db_session: AsyncSession, user: UserProtectedSchemas
 ):
@@ -85,6 +109,9 @@ async def get_list_payments_for_user(
     tag="Payments",
 )
 async def create_payment(request: Request, db_session: AsyncSession):
+    """
+    Генерация платежа по реквизитам (transaction_id генерируется системой)
+    """
     data_request = PaymentGenerateBaseSchemas(**request.json)
     payment: PaymentGenerateOutSchemas = await generate_payments(data_request)
     return json(payment.model_dump())

@@ -4,7 +4,6 @@ from pathlib import Path
 from pydantic import BaseModel
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-
 BASE_DIR = Path(__file__).parent.parent.parent
 
 COOKIE_NAME = "bonds_score"
@@ -51,7 +50,7 @@ class DbSetting(BaseSettings):
 
 class AuthJWT(BaseModel):
     algorithm: str = "HS256"
-    access_token_expire_minutes: int = 60
+    access_token_expire_minutes: int = 30
 
 
 class Setting(BaseSettings):
