@@ -10,6 +10,10 @@ class ErrorInData(Exception):
     pass
 
 
+class PaymentProcessed(Exception):
+    pass
+
+
 class EmailInUse(Exception):
     pass
 

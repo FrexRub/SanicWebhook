@@ -62,5 +62,8 @@ class Payment(Base):
         default=lambda: datetime.now(timezone.utc),
     )
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    account_id: Mapped[int] = mapped_column(
+        ForeignKey("scores.account_id", ondelete="CASCADE")
+    )
 
     user: Mapped["User"] = relationship(back_populates="payments")
