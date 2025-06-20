@@ -7,7 +7,6 @@
 - ORM: SQLAlchemy
 - Аутентификация: JWT
 - Управление миграциями: Alembic
-- Тестирование: Pytest
 
 
 Реализованный функционал:
@@ -94,32 +93,6 @@ sanic src.main:app --host=0.0.0.0 --port=8000 --fast
 
 ![Группы](readme_img/start_tranzaction.jpg)
 
-## Тестирование проекта
-
-Для тестирования проекта необходимо создать тестовую базу командой
-```
-docker compose -f docker-compose-test.yml up -d
-```
-
-Перейти в каталог с тестами
-```
-cd tests
-```
-
-Для тестирования раздела работы с пользователями
-```
-pytest -v test_user.py
-```
-
-Для тестирования раздела работы со счетами/платежами
-```
-pytest -v test_payments.py
-```
-
-Для тестирования раздела работы с транзакцией
-```
-pytest -v test_transaction.py
-```
 
 ## Licence
 
