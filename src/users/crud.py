@@ -84,7 +84,9 @@ async def create_user(session: AsyncSession, user_data: UserCreateSchemas) -> Us
         session.add(new_user)
 
         new_account_number = await bank_account(session=session)
-        new_score: Score = Score(account_number=new_account_number, user=new_user)
+        new_score: Score = Score(
+            account_number=new_account_number, user=new_user, account_id=1
+        )
         session.add(new_score)
 
         await session.commit()

@@ -31,7 +31,8 @@ class Score(Base):
         ),
     )
 
-    account_id: Mapped[int] = mapped_column(primary_key=True)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    account_id: Mapped[int]
     balance: Mapped[NUMERIC] = mapped_column(
         NUMERIC(15, 2), default=0.00, server_default=text("0.00")
     )
@@ -62,8 +63,6 @@ class Payment(Base):
         default=lambda: datetime.now(timezone.utc),
     )
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
-    account_id: Mapped[int] = mapped_column(
-        ForeignKey("scores.account_id", ondelete="CASCADE")
-    )
+    account_id: Mapped[int] = mapped_column(ForeignKey("scores.id", ondelete="CASCADE"))
 
     user: Mapped["User"] = relationship(back_populates="payments")

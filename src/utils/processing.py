@@ -3,6 +3,7 @@ import decimal
 import hashlib
 import logging
 import uuid
+from typing import Optional
 
 from sqlalchemy import and_, select
 from sqlalchemy.engine import Result
@@ -13,6 +14,8 @@ from src.core.exceptions import (
     ErrorInData,
     PaymentProcessed,
 )
+from src.users.models import User
+from src.utils.create_account_number import bank_account
 from src.payments.models import Payment, Score
 from src.payments.schemas import (
     PaymentGenerateBaseSchemas,
@@ -85,6 +88,10 @@ async def process_transaction(
         logger.info("The payment #%s is processed" % transaction_id)
         raise PaymentProcessed(f"The payment #{transaction_id} is processed")
 
+    user: Optional[User] = await session.get(User, user_id)
+    if user is None:
+        raise PaymentProcessed(f"User by id: #{user_id} not found")
+
     stmt = select(Score).filter(
         and_(
             Score.account_id == account_id,
@@ -99,27 +106,33 @@ async def process_transaction(
             "The score #%s was not found for the user with id:%s"
             % (account_id, user_id)
         )
-        raise PaymentProcessed(
-            f"The score #{account_id} was not found for the user with id: {user_id}"
+        new_account_number = await bank_account(session=session)
+        scores: Score = Score(
+            account_number=new_account_number,
+            user=user,
+            account_id=account_id,
+            balance=decimal.Decimal(0.0),
+        )
+        session.add(scores)
+        await session.commit()
+        await session.flush()
+
+        logger.info(
+            "The score #%s for the user with id:%s created" % (account_id, user_id)
         )
 
-    else:
-        logger.info(f"float(amount) {float(amount)}  {float(amount) > 0}")
-        logger.info(f"scores.balance {scores.balance}  amount {abs(amount)} {scores.balance < abs(amount)}")
-        if float(amount) < 0 and (scores.balance < abs(amount)):
-            raise PaymentProcessed("insufficient funds")
+    if float(amount) < 0 and (scores.balance < abs(amount)):
+        raise PaymentProcessed("insufficient funds")
 
-        async with session.begin_nested():
-            logger.info(
-                "The score #%s for the user with id:%s change" % (account_id, user_id)
-            )
-            print(f"The score #{account_id} for the user with id: {user_id} change")
-            scores.balance += amount
-            payment: Payment = Payment(
-                transaction_id=transaction_id,
-                amount=amount,
-                user_id=user_id,
-                account_id=scores.account_id,
-            )
-            session.add(payment)
-        await session.commit()
+    async with session.begin_nested():
+        logger.info(f"float(amount) {float(amount)}  {float(amount) < 0}")
+        scores.balance += decimal.Decimal(amount)
+        payment: Payment = Payment(
+            transaction_id=transaction_id,
+            amount=amount,
+            user_id=user_id,
+            account_id=scores.account_id,
+        )
+        session.add(payment)
+    await session.commit()
+    logger.info("The score #%s for the user with id:%s change" % (account_id, user_id))
