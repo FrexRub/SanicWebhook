@@ -53,7 +53,7 @@ docker compose exec app alembic upgrade head
 - администратора с email: admin@corp.com и паролем: 1qaz!QAZ
 - пользователь с email: elene@corp.com и паролем: 2wsx@WSX (реквизиты счера: account_id=1, user_id=2)
 
-Стартовая страница проекта [http://127.0.0.1:80](http://127.0.0.1:80).
+Стартовая страница проекта [http://127.0.0.1:8000](http://127.0.0.1:8000).
 ![Стартовая страница проекта](readme_img/start.jpg)
 
 Страница с интерактивной документацией [http://127.0.0.1:8000/docs/swagger](http://127.0.0.1:8000/docs/swagger).
@@ -78,7 +78,7 @@ docker compose exec app alembic upgrade head
 ![Группы](readme_img/test_tranzaction.jpg)
 
 С помощью эндпоинта `/webhook` запускаем сформированную транзакцию, скопировав в тело запроса 
-результат предыдущего запроса 
+результат предыдущего запроса (необходимо отредактировать значение поля amount убрав ковычки)
 
 ![Группы](readme_img/start_tranzaction.jpg)
 
