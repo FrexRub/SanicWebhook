@@ -12,6 +12,7 @@ from pydantic import (
 
 
 class ScoreBaseSchemas(BaseModel):
+    account_id: int
     account_number: str
     balance: Decimal = Field(max_digits=15, decimal_places=2)
     date_creation: datetime
@@ -26,12 +27,11 @@ class ScoreBaseSchemas(BaseModel):
 
 
 class ScoreOutSchemas(ScoreBaseSchemas):
-    account_id: int
-
-    model_config = ConfigDict(from_attributes=True)
+    pass
 
 
 class PaymentBaseSchemas(BaseModel):
+    account_id: int
     amount: Decimal = Field(max_digits=15, decimal_places=2)
     date_creation: datetime
 
