@@ -37,12 +37,6 @@
 docker compose up -d
 ```
 
-Для запуска приложения из командной строки (без docker compose)
-
-```
-sanic src.main:app --host=0.0.0.0 --port=8000 --fast
-```
-
 При первом запуске проекта необходимо выполнить миграции базы данных с помощью Alembic используя команду:
 
 ```
@@ -52,6 +46,24 @@ docker compose exec app alembic upgrade head
 
 - администратора с email: admin@corp.com и паролем: 1qaz!QAZ
 - пользователь с email: elene@corp.com и паролем: 2wsx@WSX (реквизиты счера: account_id=1, user_id=2)
+
+Для запуска приложения из командной строки (без docker compose) необходимо выполнить следующее:
+- отредактировать файл .env: значение сторки POSTGRES_HOST= должно быть пустым
+
+- запустить контейнер с базой данных: 
+```
+docker compose -f docker-compose-dev.yml up -d  
+```
+
+- выполнить миграцию:
+```
+alembic upgrade head
+```
+
+запустить сервер:
+```
+sanic src.main:app --host=0.0.0.0 --port=8000 --fast
+```
 
 Стартовая страница проекта [http://127.0.0.1:8000](http://127.0.0.1:8000).
 ![Стартовая страница проекта](readme_img/start.jpg)
