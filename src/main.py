@@ -16,23 +16,40 @@ from src.users.schemas import UserProtectedSchemas, UserSuperSchemas
 from src.users.views import router as router_user
 from src.utils.processing import process_transaction
 
-app = Sanic("WebhookApp")
+
+class WebhookApp(Sanic):
+    def __init__(self, *args, **kwargs):
+        test_mode = kwargs.pop("test_mode", False)
+        super().__init__(*args, **kwargs)
+        self.ctx._test_mode = test_mode
+
+    def setup_db(self, config=None):
+        """Настройка подключения к БД с возможностью переопределения для тестов"""
+        config = config or self.config
+        if self.ctx._test_mode:
+            config.DB_DRIVER = "postgresql+asyncpg"
+            config.DB_USER = "test"
+            config.DB_PASSWORD = "test"
+            config.DB_HOST = "localhost"
+            config.DB_PORT = 5432
+            config.DB_NAME = "testdb"
+
+        db_conn = DatabaseConnection(config)
+        db_session: AsyncSession = db_conn.create_session()
+        self.ext.dependency(db_session)
+
+
+app = WebhookApp("WebhookApp", test_mode=False)
 Extend(app)
+
+app.update_config(ConnectionsConfig)
+app.setup_db()
 
 app.blueprint(router_user)
 app.blueprint(router_payments)
-app.update_config(ConnectionsConfig)
 
 app.ext.add_dependency(UserSuperSchemas, current_superuser_user)
 app.ext.add_dependency(UserProtectedSchemas, current_user)
-
-
-@app.before_server_start
-async def setup_db(application: Sanic, _) -> None:
-    db_conn = DatabaseConnection(application.config)
-    db_session: AsyncSession = db_conn.create_session()
-
-    application.ext.dependency(db_session)
 
 
 @app.exception(SanicException)
@@ -45,7 +62,7 @@ async def handle_sanic_exception(request, exception):
 
 @app.get("/")
 async def index(request):
-    return html("<h2> * Transaction handler *</h2>")
+    return html("<h2> * Transaction handler * </h2>")
 
 
 @app.post("/webhook")
