@@ -47,6 +47,14 @@ docker compose exec app alembic upgrade head
 - пользователь с email: elene@corp.com и паролем: 2wsx@WSX (реквизиты счера: account_id=1, user_id=2)
 
 Для запуска приложения из командной строки (без docker compose) необходимо выполнить следующее:
+- устаноить пакетный менеджер Poetry: 
+```
+pip install poetry
+```
+- установить зависимости проекта:
+```
+poetry install
+```
 - отредактировать файл .env: значение сторки POSTGRES_HOST= должно быть пустым
 
 - запустить контейнер с базой данных: 
